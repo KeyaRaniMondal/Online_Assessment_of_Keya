@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 type Step = { label: string; state: "done" | "current" };
-type PreviewState = "delayed" | "not-received" | "not-available";
+type PreviewState = "delayed" | "not-received" | "not-available" | "error";
 
 const delayedSteps: Step[] = [
   { label: "Processing", state: "done" },
@@ -28,6 +28,28 @@ function CheckIcon() {
         strokeWidth="1.8"
         strokeLinecap="round"
         strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function Spinner({ label = "Loading" }: { label?: string }) {
+  return (
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      role="img"
+      aria-label={label}
+      className="animate-spin"
+    >
+      <circle cx="12" cy="12" r="9" stroke="currentColor" strokeOpacity="0.25" strokeWidth="2.5" />
+      <path
+        d="M21 12a9 9 0 0 0-9-9"
+        stroke="currentColor"
+        strokeWidth="2.5"
+        strokeLinecap="round"
       />
     </svg>
   );
@@ -139,10 +161,97 @@ function ProductCard() {
   );
 }
 
-function ContactSupportButton() {
+function OrderDetails() {
+  const [expanded, setExpanded] = useState(false);
+
   return (
-    <a
-      href="#support"
+    <section
+      aria-label="Order details"
+      className="overflow-hidden rounded-2xl border border-zinc-200"
+    >
+      <button
+        type="button"
+        aria-expanded={expanded}
+        aria-controls="order-details-panel"
+        onClick={() => setExpanded((v) => !v)}
+        className="flex w-full items-center justify-between px-4 py-3 text-left transition-colors hover:bg-zinc-50"
+      >
+        <span className="text-sm font-semibold">Order details</span>
+        <svg
+          width="18"
+          height="18"
+          viewBox="0 0 24 24"
+          fill="none"
+          aria-hidden="true"
+          className={`shrink-0 text-zinc-500 transition-transform ${expanded ? "rotate-180" : ""}`}
+        >
+          <path
+            d="M6 9l6 6 6-6"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      </button>
+      {expanded && (
+        <dl id="order-details-panel" className="border-t border-zinc-100 px-4 py-3 text-sm">
+          <div className="flex items-center justify-between py-1.5">
+            <dt className="text-zinc-500">Order date</dt>
+            <dd className="font-medium">September 24</dd>
+          </div>
+          <div className="flex items-center justify-between py-1.5">
+            <dt className="text-zinc-500">Payment</dt>
+            <dd className="font-medium">Cash on delivery</dd>
+          </div>
+          <div className="flex items-center justify-between py-1.5">
+            <dt className="text-zinc-500">Deliver to</dt>
+            <dd className="font-medium">Dhaka, Bangladesh</dd>
+          </div>
+          <div className="flex items-center justify-between border-t border-zinc-100 py-1.5">
+            <dt className="text-zinc-500">Items total</dt>
+            <dd className="font-bold">৳2,500</dd>
+          </div>
+        </dl>
+      )}
+    </section>
+  );
+}
+
+function LoadingSkeleton() {
+  return (
+    <div role="status" aria-label="Loading tracking information" className="flex flex-col gap-5">
+      <div className="animate-pulse rounded-2xl border border-zinc-200 bg-zinc-50 p-4">
+        <div className="flex items-center gap-2.5">
+          <div className="h-9 w-9 rounded-full bg-zinc-200" />
+          <div className="h-5 w-40 rounded bg-zinc-200" />
+        </div>
+        <div className="mt-3 h-4 w-full rounded bg-zinc-200" />
+        <div className="mt-2 h-4 w-2/3 rounded bg-zinc-200" />
+      </div>
+      <div className="animate-pulse rounded-2xl border border-zinc-200 p-4">
+        <div className="h-4 w-32 rounded bg-zinc-200" />
+        <div className="mt-3 h-5 w-48 rounded bg-zinc-200" />
+      </div>
+      <div className="animate-pulse rounded-2xl border border-zinc-200 p-4">
+        <div className="flex items-center gap-3">
+          <div className="h-12 w-12 rounded-xl bg-zinc-200" />
+          <div className="flex-1">
+            <div className="h-4 w-3/4 rounded bg-zinc-200" />
+            <div className="mt-2 h-3 w-1/3 rounded bg-zinc-200" />
+          </div>
+        </div>
+      </div>
+      <span className="sr-only">Loading tracking information…</span>
+    </div>
+  );
+}
+
+function ContactSupportButton({ onOpen }: { onOpen: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onOpen}
       className="flex h-12 w-full items-center justify-center gap-2 rounded-xl border border-zinc-950 text-base font-semibold transition-colors hover:bg-zinc-950 hover:text-white"
     >
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -155,11 +264,112 @@ function ContactSupportButton() {
         />
       </svg>
       Contact Support
-    </a>
+    </button>
   );
 }
 
-function DelayedState() {
+const supportChannels = [
+  { id: "call", label: "Call support", hint: "9 AM – 11 PM, every day" },
+  { id: "chat", label: "Live chat", hint: "Typically replies in minutes" },
+  { id: "email", label: "Email support", hint: "Replies within 24 hours" },
+];
+
+function SupportSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const [channel, setChannel] = useState<string | null>(null);
+
+  if (!open) return null;
+
+  const active = supportChannels.find((c) => c.id === channel);
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center" role="presentation">
+      <button
+        type="button"
+        aria-label="Close support options"
+        onClick={() => {
+          setChannel(null);
+          onClose();
+        }}
+        className="absolute inset-0 bg-black/40"
+      />
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="Contact support options"
+        className="relative w-full max-w-[430px] rounded-t-3xl bg-white p-4 pb-6 shadow-xl"
+      >
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-bold tracking-tight">Contact Support</h2>
+          <button
+            type="button"
+            autoFocus
+            aria-label="Close"
+            onClick={() => {
+              setChannel(null);
+              onClose();
+            }}
+            className="flex h-9 w-9 items-center justify-center rounded-full border border-zinc-200 transition-colors hover:bg-zinc-50"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path
+                d="M6 6l12 12M18 6L6 18"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+              />
+            </svg>
+          </button>
+        </div>
+        <p className="mt-1 text-sm text-zinc-500">
+          Help with order #ORD-1024
+        </p>
+        <div className="mt-3 flex flex-col gap-2">
+          {supportChannels.map((c) => (
+            <button
+              key={c.id}
+              type="button"
+              onClick={() => setChannel(c.id)}
+              className={`flex items-center justify-between rounded-xl border px-4 py-3 text-left transition-colors ${
+                channel === c.id
+                  ? "border-zinc-950 bg-zinc-50"
+                  : "border-zinc-200 hover:bg-zinc-50"
+              }`}
+            >
+              <span>
+                <span className="block text-[15px] font-semibold">{c.label}</span>
+                <span className="block text-xs text-zinc-500">{c.hint}</span>
+              </span>
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                aria-hidden="true"
+                className="shrink-0 text-zinc-400"
+              >
+                <path
+                  d="M9 6l6 6-6 6"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </button>
+          ))}
+        </div>
+        {active && (
+          <p role="status" className="mt-3 rounded-xl bg-emerald-50 px-3 py-3 text-sm font-medium text-emerald-900">
+            Connecting you to {active.label.toLowerCase()}… our team will follow up
+            about order #ORD-1024 shortly.
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function DelayedState({ onContact }: { onContact: () => void }) {
   return (
     <>
       <section
@@ -240,14 +450,20 @@ function DelayedState() {
       </section>
 
       <div className="mt-auto pt-2">
-        <ContactSupportButton />
+        <ContactSupportButton onOpen={onContact} />
       </div>
     </>
   );
 }
 
-function NotReceivedState() {
-  const [reported, setReported] = useState(false);
+function NotReceivedState({ onContact }: { onContact: () => void }) {
+  const [report, setReport] = useState<"idle" | "submitting" | "done">("idle");
+
+  const submitReport = () => {
+    if (report !== "idle") return;
+    setReport("submitting");
+    window.setTimeout(() => setReport("done"), 800);
+  };
 
   return (
     <>
@@ -332,7 +548,7 @@ function NotReceivedState() {
           If you haven&apos;t received the package, you can report a delivery
           issue.
         </p>
-        {reported ? (
+        {report === "done" ? (
           <p
             role="status"
             className="mt-3 rounded-xl bg-emerald-50 px-3 py-3 text-sm font-medium text-emerald-900"
@@ -344,27 +560,37 @@ function NotReceivedState() {
           <div className="mt-3 flex flex-col gap-2.5">
             <button
               type="button"
-              onClick={() => setReported(true)}
-              className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-zinc-950 text-base font-semibold text-white transition-colors hover:bg-zinc-800"
+              onClick={submitReport}
+              disabled={report === "submitting"}
+              className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-zinc-950 text-base font-semibold text-white transition-colors hover:bg-zinc-800 disabled:opacity-70"
             >
-              <svg
-                width="18"
-                height="18"
-                viewBox="0 0 24 24"
-                fill="none"
-                aria-hidden="true"
-              >
-                <path
-                  d="M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"
-                  stroke="currentColor"
-                  strokeWidth="1.8"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-              Report Delivery Issue
+              {report === "submitting" ? (
+                <>
+                  <Spinner label="Submitting report" />
+                  Submitting…
+                </>
+              ) : (
+                <>
+                  <svg
+                    width="18"
+                    height="18"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    aria-hidden="true"
+                  >
+                    <path
+                      d="M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"
+                      stroke="currentColor"
+                      strokeWidth="1.8"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                  Report Delivery Issue
+                </>
+              )}
             </button>
-            <ContactSupportButton />
+            <ContactSupportButton onOpen={onContact} />
           </div>
         )}
       </section>
@@ -380,7 +606,7 @@ function NotReceivedState() {
   );
 }
 
-function NoTrackingState() {
+function NoTrackingState({ onContact }: { onContact: () => void }) {
   return (
     <>
       <section
@@ -525,14 +751,127 @@ function NoTrackingState() {
       </section>
 
       <div className="mt-auto pt-2">
-        <ContactSupportButton />
+        <ContactSupportButton onOpen={onContact} />
       </div>
     </>
   );
 }
 
+function LoadErrorState({ onContact }: { onContact: () => void }) {
+  const [retrying, setRetrying] = useState(false);
+  const [attempts, setAttempts] = useState(0);
+
+  const retry = () => {
+    if (retrying) return;
+    setRetrying(true);
+    window.setTimeout(() => {
+      setRetrying(false);
+      setAttempts((n) => n + 1);
+    }, 900);
+  };
+
+  return (
+    <>
+      <section
+        aria-label="Tracking failed to load"
+        aria-live="polite"
+        className="flex flex-col items-center rounded-2xl border border-red-200 bg-red-50 px-4 pb-5 pt-6 text-center"
+      >
+        <span
+          aria-hidden="true"
+          className="flex h-16 w-16 items-center justify-center rounded-full bg-white shadow-sm"
+        >
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
+            <path
+              d="M12 8v5M12 16.5h.01"
+              stroke="#b91c1c"
+              strokeWidth="2"
+              strokeLinecap="round"
+            />
+            <path
+              d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"
+              stroke="#b91c1c"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        </span>
+        <h2 className="mt-3 text-lg font-bold tracking-tight text-red-950">
+          Couldn&apos;t load tracking
+        </h2>
+        <p className="mt-1 text-sm leading-6 text-red-900">
+          Something went wrong while fetching your delivery status. Check your
+          connection and try again.
+          {attempts > 0 && ` (Attempt ${attempts + 1})`}
+        </p>
+        <button
+          type="button"
+          onClick={retry}
+          disabled={retrying}
+          className="mt-4 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-zinc-950 text-base font-semibold text-white transition-colors hover:bg-zinc-800 disabled:opacity-70"
+        >
+          {retrying ? (
+            <>
+              <Spinner label="Retrying" />
+              Retrying…
+            </>
+          ) : (
+            "Try Again"
+          )}
+        </button>
+      </section>
+
+      <ProductCard />
+
+      <section
+        aria-label="Current status"
+        className="rounded-2xl border border-zinc-200 bg-zinc-50 p-4"
+      >
+        <p className="text-sm text-zinc-500">Current status</p>
+        <p className="mt-1 text-lg font-bold">Unavailable</p>
+      </section>
+
+      <div className="mt-auto pt-2">
+        <ContactSupportButton onOpen={onContact} />
+      </div>
+    </>
+  );
+}
+
+const previewTabs: { id: PreviewState; label: string; ariaLabel: string }[] = [
+  { id: "delayed", label: "Delayed", ariaLabel: "State 1, delayed order" },
+  { id: "not-received", label: "Not received", ariaLabel: "State 2, delivered but not received" },
+  { id: "not-available", label: "No tracking", ariaLabel: "State 3, tracking not available yet" },
+  { id: "error", label: "Error", ariaLabel: "Error state, tracking failed to load" },
+];
+
 export default function MainPage() {
   const [preview, setPreview] = useState<PreviewState>("not-available");
+  const [loading, setLoading] = useState(true);
+  const [supportOpen, setSupportOpen] = useState(false);
+
+  useEffect(() => {
+    const t = window.setTimeout(() => setLoading(false), 650);
+    return () => window.clearTimeout(t);
+  }, [preview]);
+
+  useEffect(() => {
+    if (!supportOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setSupportOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [supportOpen]);
+
+  const selectPreview = (next: PreviewState) => {
+    if (next === preview) return;
+    setLoading(true);
+    setPreview(next);
+  };
+
+  const openSupport = () => setSupportOpen(true);
 
   return (
     <div className="flex min-h-screen justify-center bg-zinc-100 font-sans text-zinc-950">
@@ -563,47 +902,24 @@ export default function MainPage() {
           <div
             role="group"
             aria-label="Preview order state"
-            className="mt-2 grid grid-cols-3 gap-1 rounded-xl bg-zinc-100 p-1"
+            className="mt-2 grid grid-cols-4 gap-1 rounded-xl bg-zinc-100 p-1"
           >
-            <button
-              type="button"
-              aria-pressed={preview === "delayed"}
-              aria-label="State 1, delayed order"
-              onClick={() => setPreview("delayed")}
-              className={`h-10 rounded-lg text-[13px] font-semibold transition-colors ${
-                preview === "delayed"
-                  ? "bg-white text-zinc-950 shadow-sm"
-                  : "text-zinc-500 hover:text-zinc-800"
-              }`}
-            >
-              Delayed
-            </button>
-            <button
-              type="button"
-              aria-pressed={preview === "not-received"}
-              aria-label="State 2, delivered but not received"
-              onClick={() => setPreview("not-received")}
-              className={`h-10 rounded-lg text-[13px] font-semibold transition-colors ${
-                preview === "not-received"
-                  ? "bg-white text-zinc-950 shadow-sm"
-                  : "text-zinc-500 hover:text-zinc-800"
-              }`}
-            >
-              Not received
-            </button>
-            <button
-              type="button"
-              aria-pressed={preview === "not-available"}
-              aria-label="State 3, tracking not available yet"
-              onClick={() => setPreview("not-available")}
-              className={`h-10 rounded-lg text-[13px] font-semibold transition-colors ${
-                preview === "not-available"
-                  ? "bg-white text-zinc-950 shadow-sm"
-                  : "text-zinc-500 hover:text-zinc-800"
-              }`}
-            >
-              No tracking
-            </button>
+            {previewTabs.map((tab) => (
+              <button
+                key={tab.id}
+                type="button"
+                aria-pressed={preview === tab.id}
+                aria-label={tab.ariaLabel}
+                onClick={() => selectPreview(tab.id)}
+                className={`h-10 rounded-lg text-xs font-semibold transition-colors ${
+                  preview === tab.id
+                    ? "bg-white text-zinc-950 shadow-sm"
+                    : "text-zinc-500 hover:text-zinc-800"
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
           </div>
         </div>
 
@@ -615,14 +931,25 @@ export default function MainPage() {
             </h2>
           </section>
 
-          {preview === "delayed" ? (
-            <DelayedState />
-          ) : preview === "not-received" ? (
-            <NotReceivedState />
+          {loading ? (
+            <LoadingSkeleton />
           ) : (
-            <NoTrackingState />
+            <>
+              <OrderDetails />
+              {preview === "delayed" ? (
+                <DelayedState onContact={openSupport} />
+              ) : preview === "not-received" ? (
+                <NotReceivedState onContact={openSupport} />
+              ) : preview === "not-available" ? (
+                <NoTrackingState onContact={openSupport} />
+              ) : (
+                <LoadErrorState onContact={openSupport} />
+              )}
+            </>
           )}
         </main>
+
+        <SupportSheet open={supportOpen} onClose={() => setSupportOpen(false)} />
       </div>
     </div>
   );
