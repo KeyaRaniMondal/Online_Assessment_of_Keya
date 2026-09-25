@@ -1,0 +1,30 @@
+Build a mobile-first page, approximately 360–430px wide
+Order Tracking 
+     |     
+Order #ORD-1024          
+     |                      
+ Product               
+  Wireless Headphones  
+  ৳2,500 × 1            
+     |                    
+ Estimated delivery      
+ Tomorrow, Sep 26        
+      |                    
+  Processing             
+      |                   
+  Shipped                
+      |                   
+  Out for Delivery      
+      |                   
+  Delivered             
+      |                   
+ Current status           
+ Out for Delivery         
+       |                   
+ Contact Support     
+
+
+ what to do now:E:\Vecosoft\order_traking_screen>pnpm run build $ next build ▲ Next.js 16.3.6 (Turbopack) ✓ Running next.config.ts took 33ms Creating an optimized production build ... ✓ Compiled successfully in 622ms ✓ Finished TypeScript in 2.2s ✓ Collecting page data using 5 workers in 957ms ✓ Generating static pages using 5 workers (4/4) in 698ms ✓ Finalizing page optimization in 13ms Route (app) ┌ ○ / └ ○ /_not-found ○ (Static) prerendered as static content
+
+
+ how can i implement TTl in js for LRU Cache that has been implemented using map()
